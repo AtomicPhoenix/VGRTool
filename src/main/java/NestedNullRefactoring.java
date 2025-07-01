@@ -66,6 +66,8 @@ public class NestedNullRefactoring extends Refactoring {
 		// Confirm that the method returns a boolean
 		MethodDeclaration method = (MethodDeclaration) node;
 		Type retType = method.getReturnType2();
+		if (retType == null)
+			return false;
 		boolean isBooleanDeclaration = (retType.isPrimitiveType()
 				&& ((PrimitiveType) retType).getPrimitiveTypeCode() == PrimitiveType.BOOLEAN);
 		if (!(isBooleanDeclaration))
@@ -78,6 +80,8 @@ public class NestedNullRefactoring extends Refactoring {
 			return false;
 
 		Block body = method.getBody();
+		if (body == null)
+			return false;
 		List<Statement> stmts = body.statements();
 
 		// Checks if there is only one line

@@ -145,9 +145,8 @@ public class AddNullCheckBeforeDereferenceRefactoring extends Refactoring {
 						break;
 					}
 				}
-			} else {
-				current = current.getParent();
 			}
+			current = current.getParent();
 		}
 
 		if (existingIfStatement != null) {

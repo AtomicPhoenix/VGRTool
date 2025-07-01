@@ -41,7 +41,16 @@ dependencies {
 
 spotless {
    java {
-      eclipse() 
+        removeUnusedImports()
+
+        cleanthat()         // Refactors code
+        eclipse() 
+
+        formatAnnotations()  // fixes formatting of type annotations, see below
+
+        suppressLintsFor {
+            step = 'eclipse jdt formatter'
+        }
    }
 }
 
