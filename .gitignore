@@ -5,6 +5,9 @@
 build
 bin
 
+# Ignore auto-generated benchmarking files
+benchmarking/outputs
+
 # Ignore IDE specific files
 .vscode
 .classpath
