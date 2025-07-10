@@ -6,7 +6,11 @@ build
 bin
 
 # Ignore auto-generated benchmarking files
-benchmarking/outputs
+benchmarking/datasets/
+benchmarking/results/
+benchmarking/sources/
+
+
 
 # Ignore IDE specific files
 .vscode

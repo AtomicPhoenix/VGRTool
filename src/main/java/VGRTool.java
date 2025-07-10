@@ -39,6 +39,7 @@ public class VGRTool {
 			System.out.println(" - NestedNullRefactoring");
 			System.out.println(" - SentinelRefactoring");
 			System.out.println(" - SeperateVariableRefactoring");
+			System.out.println(" - All");
 			System.exit(1);
 		}
 
