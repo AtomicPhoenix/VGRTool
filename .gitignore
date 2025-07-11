@@ -10,3 +10,10 @@ bin
 .classpath
 .settings
 .project
+.factorypath
+
+# Ignore NixOS Dev Tools
+.envrc
+.direnv/
+flake.lock
+flake.nix
