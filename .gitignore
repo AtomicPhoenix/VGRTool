@@ -3,5 +3,17 @@
 
 # Ignore Gradle build output directory
 build
+bin
 
+# Ignore IDE specific files
 .vscode
+.classpath
+.settings
+.project
+.factorypath
+
+# Ignore NixOS Dev Tools
+.envrc
+.direnv/
+flake.lock
+flake.nix
