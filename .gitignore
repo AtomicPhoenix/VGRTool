@@ -10,8 +10,6 @@ benchmarking/datasets/
 benchmarking/results/
 benchmarking/sources/
 
-
-
 # Ignore IDE specific files
 .vscode
 .classpath
@@ -19,8 +17,7 @@ benchmarking/sources/
 .project
 .factorypath
 
-# Ignore NixOS Dev Tools
-.envrc
+# Ignore Shell Extensions
 .direnv/
-flake.lock
-flake.nix
+.envrc
+

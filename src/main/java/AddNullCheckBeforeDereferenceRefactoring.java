@@ -22,6 +22,14 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
  * before a value dereference
  */
 public class AddNullCheckBeforeDereferenceRefactoring extends Refactoring {
+	public static final String NAME = "AddNullCheckBeforeDereferenceRefactoring";
+
+	/**
+	 * Optional list of expressions identified as possibly null (to guide
+	 * applicability)
+	 */
+	@SuppressWarnings("unused")
+	private List<Expression> possiblyNullExpressions;
 
 	/** Default constructor (for RefactoringEngine integration) */
 	public AddNullCheckBeforeDereferenceRefactoring() {

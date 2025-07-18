@@ -1,3 +1,4 @@
+
 import java.util.Collections;
 import org.checkerframework.com.google.common.collect.Lists;
 import org.eclipse.jdt.core.dom.AST;
@@ -13,11 +14,11 @@ public class TestingEngine {
 	 * RefactoringEngine to use to run tests
 	 */
 	private static RefactoringEngine fullEngine = new RefactoringEngine(
-			Lists.newArrayList("SentinelRefactoring", "AddNullCheckBeforeDereferenceRefactoring",
-					"BooleanFlagRefactoring", "NestedNullRefactoring", "SentinelRefactoring"));;
+			Lists.newArrayList(AddNullCheckBeforeDereferenceRefactoring.NAME));
 
+	// TODO: WRITE VARIANTS FOR SUPPORTED JAVA VERSIONS
 	private static ASTParser parser = ASTParser.newParser(AST.getJLSLatest()); // Use appropriate
-																				// JLS version
+	// JLS version
 	;
 
 	public TestingEngine() {
@@ -26,36 +27,24 @@ public class TestingEngine {
 	}
 
 	public static void testAllRefactorings(String input, String expectedOutput) {
-		// Set parser source code
-		parser.setSource(input.toCharArray());
-
-		// Parse the source code into an AST
-		CompilationUnit cu = (CompilationUnit) parser.createAST(null);
-
-		// Apply refactoring
-		String result = fullEngine.applyRefactorings(cu, input);
-
-		// Assert that the output matches the expected transformation
-		assertEquals(expectedOutput, result);
+		runTest(input, expectedOutput, fullEngine);
 	}
 
-	public static void testSingleRefactoring(String input, String expectedOutput,
-			String refactoring) {
-		System.out.println("Testing input:\n" + input + "\n");
+	public static void testSingleRefactoring(String input, String expectedOutput, String refactoring) {
+		runTest(input, expectedOutput, new RefactoringEngine(Collections.singletonList(refactoring)));
+	}
 
+	private static void runTest(String input, String expectedOutput, RefactoringEngine engine) {
 		// Set parser source code
 		parser.setSource(input.toCharArray());
 
 		// Parse the source code into an AST
 		CompilationUnit cu = (CompilationUnit) parser.createAST(null);
 
-		// Set engine
-		RefactoringEngine engine = new RefactoringEngine(Collections.singletonList(refactoring));
 		// Apply refactoring
 		String result = engine.applyRefactorings(cu, input);
 
 		// Assert that the output matches the expected transformation
 		assertEquals(expectedOutput, result);
-
 	}
 }
