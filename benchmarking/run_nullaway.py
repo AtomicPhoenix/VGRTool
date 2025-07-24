@@ -91,7 +91,7 @@ def stage_zero():
 def stage_one():
     global benchmark_results
     print("Benchmarking Stage One: Running NullAway on unmodified NJR-1 Dataset")
-    results = run_benchmark(DATASETS_CACHE_FOLDER)
+    results = run_benchmark(DATASETS_CACHE_FOLDER, f"{RESULTS_FOLDER}/pre-refactor")
     rows = []
     for benchmark, value in results.items():
         rows.append(
@@ -125,7 +125,9 @@ def stage_two():
 def stage_three():
     global benchmark_results
     print("Benchmarking Stage Three: Running NullAway on refactored NJR-1 Dataset")
-    results = run_benchmark(DATASETS_REFACTORED_FOLDER)
+    results = run_benchmark(
+        DATASETS_REFACTORED_FOLDER, f"{RESULTS_FOLDER}/post-refactor"
+    )
 
     for benchmark, value in results.items():
         benchmark_results.loc[
@@ -171,7 +173,8 @@ def stage_four():
     print("Benchmarking Stage Four Completed\n")
 
 
-def run_benchmark(path: str):
+def run_benchmark(path: str, results_folder: str):
+    os.makedirs(results_folder, exist_ok=True)
     errors: dict[str, int] = {}
     for benchmark in os.listdir(path):
         print(f"Benchmarking {os.path.basename(benchmark)}...")
@@ -230,11 +233,9 @@ def run_benchmark(path: str):
             "0",
             f"@{src_file}",
         ]
-        print(" ".join(command))
-        sys.exit()
 
         result = subprocess.run(command, text=True, capture_output=True)
-        with open(f"{RESULTS_FOLDER}/{benchmark}.txt", "w") as result_file:
+        with open(f"{results_folder}/{benchmark}.txt", "w") as result_file:
             _ = result_file.write(result.stderr)
 
         error_count = len(
