@@ -125,8 +125,7 @@ public class NestedNullRefactoring extends Refactoring {
 			Expression expr = (applicableMethods.get(invocationName));
 			System.out.println("Replacing \n" + invocation + "\nWith \n" + expr);
 			rewriter.replace(invocation, expr, null);
-		} else if (node instanceof PrefixExpression prefix
-				&& prefix.getOperator() == PrefixExpression.Operator.NOT
+		} else if (node instanceof PrefixExpression prefix && prefix.getOperator() == PrefixExpression.Operator.NOT
 				&& prefix.getOperand() instanceof MethodInvocation invocation) {
 			String invocationName = invocation.toString();
 			Expression expr = (applicableMethods.get(invocationName));

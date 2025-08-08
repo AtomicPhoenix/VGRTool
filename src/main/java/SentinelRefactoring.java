@@ -110,11 +110,9 @@ public class SentinelRefactoring extends Refactoring {
 
 			// Check if condition uses a null check
 			SimpleName varName = null;
-			if ((leftOperand instanceof SimpleName vName
-					&& rightOperand instanceof NullLiteral)) {
+			if ((leftOperand instanceof SimpleName vName && rightOperand instanceof NullLiteral)) {
 				varName = vName;
-			} else if ((rightOperand instanceof SimpleName vName
-					&& leftOperand instanceof NullLiteral)) {
+			} else if ((rightOperand instanceof SimpleName vName && leftOperand instanceof NullLiteral)) {
 				varName = vName;
 			} else {
 				return false;
@@ -232,12 +230,16 @@ public class SentinelRefactoring extends Refactoring {
 	/**
 	 * Parses an equality expression to find a check of a sentinel value
 	 * 
-	 * @param ast           The AST the Expression belongs to
-	 * @param equalityVar   The name of the variable in the equality expression
-	 * @param equalityExpr  The expression in the equality expression
-	 * @param infixOperator The operator in the equality expression
-	 * @return The explicit null check the sentinel value represents, or null if
-	 *         not sentinel check found
+	 * @param ast
+	 *            The AST the Expression belongs to
+	 * @param equalityVar
+	 *            The name of the variable in the equality expression
+	 * @param equalityExpr
+	 *            The expression in the equality expression
+	 * @param infixOperator
+	 *            The operator in the equality expression
+	 * @return The explicit null check the sentinel value represents, or null if not
+	 *         sentinel check found
 	 */
 	public Expression getReplacementExpression(ASTNode node, SimpleName equalityVar, Expression equalityExpr,
 			InfixExpression.Operator infixOperator) {

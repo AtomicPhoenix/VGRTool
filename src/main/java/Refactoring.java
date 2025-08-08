@@ -14,7 +14,8 @@ public abstract class Refactoring {
 	/**
 	 * Identifies if an AST node could potentially be refactored
 	 * 
-	 * @param node The ASTNode under analysis
+	 * @param node
+	 *            The ASTNode under analysis
 	 * @return A boolean representing whether node can be refactored
 	 */
 	public abstract boolean isApplicable(ASTNode node);
@@ -22,15 +23,18 @@ public abstract class Refactoring {
 	/**
 	 * Applies refactoring to an ASTNode
 	 * 
-	 * @param node     The ASTNode to refactor
-	 * @param rewriter The ASTRewriter to use for rewriting
+	 * @param node
+	 *            The ASTNode to refactor
+	 * @param rewriter
+	 *            The ASTRewriter to use for rewriting
 	 */
 	public abstract void apply(ASTNode node, ASTRewrite rewriter);
 
 	/**
 	 * Recursively analyze an expression to get all the expressions that comprise it
 	 * 
-	 * @param expr The expression to analyze
+	 * @param expr
+	 *            The expression to analyze
 	 * @return A list of all subexpressions within an expreesion
 	 */
 	public static List<Expression> parseExpression(Expression expr) {
@@ -38,8 +42,7 @@ public abstract class Refactoring {
 
 		if (expr instanceof ParenthesizedExpression pExpr) {
 			exprList.addAll(parseExpression(pExpr.getExpression()));
-		} else if (expr instanceof PrefixExpression pExpr
-				&& pExpr.getOperator() == PrefixExpression.Operator.NOT) {
+		} else if (expr instanceof PrefixExpression pExpr && pExpr.getOperator() == PrefixExpression.Operator.NOT) {
 			exprList.addAll(parseExpression(pExpr.getOperand()));
 		} else if (expr instanceof InfixExpression infix
 				&& (infix.getOperator().equals(InfixExpression.Operator.CONDITIONAL_AND)
