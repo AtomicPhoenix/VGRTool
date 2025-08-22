@@ -18,8 +18,8 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 // (Assume Refactoring is an abstract base class provided in the same framework)
-public class AddNullCheckBeforeDereferenceRefactoring extends Refactoring {
-	public static final String NAME = "AddNullCheckBeforeDereferenceRefactoring";
+public class DereferenceRefactoring extends Refactoring {
+	public static final String NAME = "DereferenceRefactoring";
 
 	/**
 	 * Optional list of expressions identified as possibly null (to guide
@@ -29,12 +29,12 @@ public class AddNullCheckBeforeDereferenceRefactoring extends Refactoring {
 	private List<Expression> possiblyNullExpressions;
 
 	/** Default constructor (for RefactoringEngine integration) */
-	public AddNullCheckBeforeDereferenceRefactoring() {
+	public DereferenceRefactoring() {
 		super(); // Call to base class (if it expects a name/ID)
 	}
 
 	/** Constructor that accepts a list of possibly-null expressions */
-	public AddNullCheckBeforeDereferenceRefactoring(List<Expression> possiblyNullExpressions) {
+	public DereferenceRefactoring(List<Expression> possiblyNullExpressions) {
 		super();
 		this.possiblyNullExpressions = possiblyNullExpressions;
 	}

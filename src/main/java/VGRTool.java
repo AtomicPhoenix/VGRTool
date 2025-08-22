@@ -28,7 +28,7 @@ public class VGRTool {
 			System.out.println("Available Modules:");
 			System.out.println(" - WrapWithCheckNotNullRefactoring");
 			System.out.println(" - AddNullChecksForNullableReferences");
-			System.out.println(" - AddNullCheckBeforeDereferenceRefactoring");
+			System.out.println(" - DereferenceRefactoring");
 			System.out.println(" - IntroduceLocalVariableAndNullCheckRefactoring");
 			System.out.println(" - IntroduceLocalVariableWithNullCheckRefactoring");
 			System.out.println(" - SimplifyNullCheckRefactoring");
