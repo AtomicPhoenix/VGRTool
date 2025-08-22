@@ -148,9 +148,8 @@ public class DereferenceRefactoring extends Refactoring {
 						break;
 					}
 				}
-			} else {
-				current = current.getParent();
 			}
+			current = current.getParent();
 		}
 
 		if (existingIfStatement != null && assignedVariable != null) {

@@ -22,8 +22,7 @@ public class RefactoringEngine {
 
 		for (String name : refactoringNames) {
 			switch (name) {
-				case DereferenceRefactoring.NAME ->
-					refactorings.add(new DereferenceRefactoring());
+				case DereferenceRefactoring.NAME -> refactorings.add(new DereferenceRefactoring());
 				// case "BooleanFlagRefactoring" -> refactorings.add(new
 				// BooleanFlagRefactoring());
 				case NestedNullRefactoring.NAME -> refactorings.add(new NestedNullRefactoring());
