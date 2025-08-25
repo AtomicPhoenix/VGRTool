@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'application'
 	id("com.diffplug.spotless") version "7.0.4"
+	id 'jacoco'
 }
 
 group = 'com.example'
@@ -94,6 +95,47 @@ tasks.named('test', Test) {
 
 	testLogging {
 		events "passed"
+	}
+	finalizedBy jacocoTestReport // Generate test coverage report after tests are run
+}
+
+jacocoTestReport {
+	dependsOn test // tests are required to run before generating the report
+	reports {
+		xml.required = true
+	}
+	doLast {
+
+		def testReport = file("${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
+
+		// XML Parser does not produce a valid DTD so we need to remove the DOCTYPE declaration to be able to parse the XML
+		def rawXml = testReport.getText('UTF-8').replaceFirst(/<!DOCTYPE[^>]*>/, "")
+		def report = new XmlParser().parseText(rawXml)
+
+		// get percent coverage of specific given type (one of INSTRUCTION, BRANCH, LINE, COMPLEXITY, METHOD, CLASS)
+		def getCoverage = { String type ->
+			def counter = report.counter.find { it.@type == type }
+			def missed = counter.@missed.toInteger()
+			def covered = counter.@covered.toInteger()
+			def coverage = (covered / (missed + covered)) * 100
+
+			// Color output based on how good coverage is
+			def color = '\033[0m' // white
+			if (coverage > 75) {
+				color = '\033[0;32m' // green
+			} else if (coverage > 50) {
+				color = '\033[0;33m' // yellow
+			} else {
+				color = '\033[0;31m' // red
+			}
+			String.format('%s%.2f%%\033[0m', color, coverage)
+		}
+
+		println "Instruction coverage: ${getCoverage('INSTRUCTION')}"
+		println "Line coverage: ${getCoverage('LINE')}"
+		println "Branch coverage: ${getCoverage('BRANCH')}"
+		println "Class coverage: ${getCoverage('CLASS')}"
+		println("Full coverage report available at ${reports.html.outputLocation.get()}/index.html") // jacoco has no option to print results to cli
 	}
 }
 

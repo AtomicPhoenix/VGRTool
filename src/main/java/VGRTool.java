@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -92,6 +93,17 @@ public class VGRTool {
 			@SuppressWarnings("deprecation")
 			ASTParser parser = ASTParser.newParser(AST.JLS17); // Use Java 17
 			parser.setSource(content.toCharArray());
+			parser.setResolveBindings(true);
+			parser.setBindingsRecovery(true);
+
+			parser.setUnitName(file.getName()); // Required for binding resolution
+
+			// Set classpath and sourcepath
+			String[] classpathEntries = {System.getProperty("java.home") + "/lib/rt.jar"}; // JDK classes
+
+			parser.setEnvironment(classpathEntries, null, null, true);
+			parser.setCompilerOptions(JavaCore.getOptions());
+
 			CompilationUnit cu = (CompilationUnit) parser.createAST(null);
 
 			// Step 5: Initialize RefactoringEngine with the selected module

@@ -28,8 +28,7 @@ public class RefactoringEngine {
 					refactorings.add(new AddNullCheckBeforeDereferenceRefactoring());
 				// case "BooleanFlagRefactoring" -> refactorings.add(new
 				// BooleanFlagRefactoring());
-				// case "NestedNullRefactoring" -> refactorings.add(new
-				// NestedNullRefactoring());
+				case NestedNullRefactoring.NAME -> refactorings.add(new NestedNullRefactoring());
 				// case "SentinelRefactoring" -> refactorings.add(new SentinelRefactoring());
 				// case "SeperateVariableRefactoring" -> refactorings.add(new
 				// SeperateVariableRefactoring());
