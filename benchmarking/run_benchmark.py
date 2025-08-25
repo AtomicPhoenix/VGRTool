@@ -204,9 +204,8 @@ def annotate(dataset: str):
         print(
             f"Annotation failed with exit code {res.returncode} for dataset {dataset}"
         )
-        print(f"Annotate Command for dataset {dataset}: {" ".join(annotate_cmd)}")
     if DEBUG:
-        print(f"Annotate Command for dataset {dataset}: {" ".join(annotate_cmd)}")
+        print(f"Annotate Command for dataset {dataset}: \n\t{" ".join(annotate_cmd)}\n")
     return
 
 
@@ -232,12 +231,9 @@ def refactor(dataset: str):
     )
     if res != 0:
         print(f"Running VGRTool failed with exit code {res} for dataset {dataset}")
-        print(
-            f"BUILD COMMAND: ./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
-        )
     if DEBUG:
         print(
-            f"BUILD COMMAND: ./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
+            f"Build Command for dataset {dataset}: ./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
         )
     return
 
