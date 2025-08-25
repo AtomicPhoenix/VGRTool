@@ -1,4 +1,3 @@
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -231,6 +230,72 @@ public class BooleanFlagTesting {
 				            TreeSet<?> set = new TreeSet<>(items);
 				        }
 				    }
+				}
+				""";
+		test(input, expectedOutput);
+	}
+
+	@Test
+	public void reassignmentTest() {
+		String input = """
+				public class NewContainerTest {
+				    List<String> items = Arrays.asList("Hello World");
+
+				    public void test() {
+				        boolean hasItems = (items != null && !items.isEmpty());
+					hasItems = true;
+
+				        // Due to reassignment implies nothing
+				        if (hasItems) {
+				            TreeSet<?> set = new TreeSet<>(items);
+				        }
+				    }
+				}
+				""";
+		String expectedOutput = input; // No changes should be made
+		test(input, expectedOutput);
+	}
+
+	@Test
+	public void nextedExpressionTest() {
+		String input = """
+				public class BooleanFlagTest {
+				  public void testMethod(String x) {
+				    boolean xIsNull = (!(!(x == null)));
+				    if (xIsNull) {
+				      ;
+				    }
+
+				    boolean xIsNull2 = ((5 > 3) && (2 < 3 && (x == null)));
+				    if (xIsNull2) {
+				      ;
+				    }
+
+				    boolean xIsNull3 = (!((5 > 3) && !(2 < 3 && !(x == null))));
+				    if (xIsNull3) {
+				      ;
+				    }
+				  }
+				}
+				""";
+		String expectedOutput = """
+				public class BooleanFlagTest {
+				  public void testMethod(String x) {
+				    boolean xIsNull = (!(!(x == null)));
+				    if (((!(!(x == null))))) {
+				      ;
+				    }
+
+				    boolean xIsNull2 = ((5 > 3) && (2 < 3 && (x == null)));
+				    if ((((5 > 3) && (2 < 3 && (x == null))))) {
+				      ;
+				    }
+
+				    boolean xIsNull3 = (!((5 > 3) && !(2 < 3 && !(x == null))));
+				    if (((!((5 > 3) && !(2 < 3 && !(x == null)))))) {
+				      ;
+				    }
+				  }
 				}
 				""";
 		test(input, expectedOutput);
