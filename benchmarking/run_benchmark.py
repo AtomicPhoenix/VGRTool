@@ -4,7 +4,9 @@ import re
 import shutil
 import subprocess
 import sys
+from numpy.strings import isdigit
 import pandas as pd
+
 
 BENCHMARKING_DIR = "./benchmarking"  # Base directory for benchmarking inputs / outputs
 DATASETS_DIR = (
@@ -45,6 +47,20 @@ ANNOTATOR_CONFIG = f"{ANNOTATOR_OUT_DIR}/paths.tsv"
 ANNOTATOR_JAR = f"{ANNOTATOR_JAR_DIR}/annotator-core-1.3.15.jar"
 
 
+ERROR_PRONE_EXPORTS = [
+    "-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    "-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    "-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+    "-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+    "-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    "-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+    "-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+    "-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+    "-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+]
+
+
 def initialize():
     print("Initializing benchmarking folders and datasets")
     os.makedirs(SRC_DIR, exist_ok=True)
@@ -79,24 +95,10 @@ def initialize():
     print("Benchmarking Stage Zero Completed\n")
 
 
-error_prone_exports = [
-    "-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-    "-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-    "-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
-    "-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
-    "-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-    "-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
-    "-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-    "-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-    "-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-    "-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
-]
-
-
 def get_source_files(dataset):
     find_srcs_command = [
         "find",
-        f"{DATASETS_CACHE_DIR}/{dataset}/src",
+        f"{DATASETS_REFACTORED_DIR}/{dataset}/src",
         "-name",
         "*.java",
     ]
@@ -107,7 +109,7 @@ def get_source_files(dataset):
 
 
 def get_plugin_options(dataset: str):
-    dataset_path = f"{DATASETS_CACHE_DIR}/{dataset}"
+    dataset_path = f"{DATASETS_REFACTORED_DIR}/{dataset}"
     find_pkgs_command = (
         f"find {dataset_path}"
         + " -name \"*.java\" -exec awk 'FNR==1 && /^package/ {print $2}' {} + | sed 's/;//' | sort -u | paste -sd,"
@@ -132,12 +134,12 @@ def get_plugin_options(dataset: str):
 
 
 def get_build_cmd(dataset: str):
-    lib_dir = f"{DATASETS_CACHE_DIR}/{dataset}/lib"
+    lib_dir = f"{DATASETS_REFACTORED_DIR}/{dataset}/lib"
     src_file = get_source_files(dataset)
     plugin_options = get_plugin_options(dataset)
 
     build_cmd: list[str] = ["javac"]
-    build_cmd += error_prone_exports
+    build_cmd += ERROR_PRONE_EXPORTS
     build_cmd += [
         "-d",
         f"{COMPILED_CLASSES_DIR}",
@@ -154,10 +156,6 @@ def get_build_cmd(dataset: str):
         "0",
         f"@{src_file}",
     ]
-    # print(f"\nBUILD COMMAND FOR DATASET {dataset}:")
-    # print(" ".join(build_cmd))
-    # print("\n\n")
-    # print(build_cmd)
     return build_cmd
 
 
@@ -198,23 +196,19 @@ def annotate(dataset: str):
         "--depth",
         "10",
     ]
-    # print(f"\nANNOTATE COMMAND FOR DATASET {dataset}:")
-    # print(" ".join(annotate_cmd))
-    # print("\n\n")
-    result = subprocess.run(annotate_cmd, text=True, capture_output=True)
-    # print(f"STDERR:\n{result.stderr}")
-    # print(f"STDOUT:\n{result.stdout}")
+    res = subprocess.run(annotate_cmd, text=True, capture_output=True)
+    if res.returncode != 0:
+        print(f"Annotation failed with exit code {res} for dataset {dataset}")
+        print(f"BUILD COMMAND: {annotate_cmd}")
+    return
 
 
 def get_errors(dataset: str):
-    # result = subprocess.run(get_build_cmd(dataset), text=True, capture_output=True)
-    # print(f"STDERR:\n{result.stderr}")
-    # print(f"STDOUT:\n{result.stdout}")
     build_cmd = " ".join(get_build_cmd(dataset))
     result_file = f"{OUTPUT_DIR}/tmp.txt"
     _ = os.system(f"{build_cmd} &> {result_file}")
 
-    # Read the file and count occurrences of NullAway error
+    # Read the file and count occurrences of NullAway errors
     with open(result_file, "r") as f:
         output = f.read()
 
@@ -223,17 +217,28 @@ def get_errors(dataset: str):
 
 def refactor(dataset: str):
     res = os.system(
-        f"./gradlew run --args='{DATASETS_CACHE_DIR}/{dataset} All' &> /dev/null"
+        f"./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
     )
     if res != 0:
         print(f"Running VGRTool failed with exit code {res} for dataset {dataset}")
+        print(
+            f"BUILD COMMAND: ./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
+        )
     return
 
 
-def run():
+def run(limit=None):
+    """
+    Runs the full benchmarking routine (Annotate -> Count Errors -> Refactor -> Count Errors) for every dataset in the NJR-1 dataset collection and then summarizes the results.
+    """
     results = []
 
-    for dataset in os.listdir(DATASETS_CACHE_DIR):
+    datasets_list = os.listdir(DATASETS_REFACTORED_DIR)
+
+    if limit is not None:
+        datasets_list = datasets_list[:limit]
+
+    for dataset in datasets_list:
         print(f"Annotating {dataset}...")
         annotate(dataset)
         old_err_count = get_errors(dataset)
@@ -248,6 +253,28 @@ def run():
                 "refactored_error_count": new_err_count,
             }
         )
+    print("Finished running benchmarks")
+    summarize(results)
+    return
+
+
+def run_one(dataset):
+    results = []
+
+    print(f"Annotating {dataset}...")
+    annotate(dataset)
+    old_err_count = get_errors(dataset)
+    print(f"Refactoring {dataset}...")
+    refactor(dataset)
+    new_err_count = get_errors(dataset)
+    print(f"Finished benchmarking {dataset}")
+    results.append(
+        {
+            "benchmark": dataset,
+            "initial_error_count": old_err_count,
+            "refactored_error_count": new_err_count,
+        }
+    )
     print("Finished running benchmarks")
     summarize(results)
     return
@@ -289,4 +316,13 @@ def summarize(results):
     benchmark_results.to_csv(f"{OUTPUT_DIR}/summary.csv")
 
 
-run()
+if len(sys.argv) == 3 and sys.argv[1] == "run":
+    if isdigit(sys.argv[2]):
+        run(int(sys.argv[2]))
+    if not os.path.isdir(sys.argv[2]):
+        print(f"USAGE: {sys.argv[0]} RUN <DIR>")
+        sys.exit(1)
+    run_one(os.path.split(sys.argv[2])[-1])
+# elif len(sys.argv) == 2 and sys.argv[1] == "run":
+else:
+    run()
