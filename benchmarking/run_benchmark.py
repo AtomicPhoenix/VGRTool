@@ -4,6 +4,7 @@ import re
 import shutil
 import subprocess
 import sys
+import argparse
 from numpy.strings import isdigit
 import pandas as pd
 
@@ -60,6 +61,8 @@ ERROR_PRONE_EXPORTS = [
     "-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
 ]
 
+DEBUG = False
+
 
 def initialize():
     print("Initializing benchmarking folders and datasets")
@@ -112,7 +115,7 @@ def get_plugin_options(dataset: str):
     dataset_path = f"{DATASETS_REFACTORED_DIR}/{dataset}"
     find_pkgs_command = (
         f"find {dataset_path}"
-        + " -name \"*.java\" -exec awk 'FNR==1 && /^package/ {print $2}' {} + | sed 's/;//' | sort -u | paste -sd,"
+        + " -name '*.java' -exec awk 'FNR==1 && /^package/ {print $2}' {} + | sed 's/;//' | sort -u | tr '\n\r' ',' | sed 's/,,/,/g' | sed 's/,$//'"
     )
 
     pkgs = subprocess.run(
@@ -198,8 +201,12 @@ def annotate(dataset: str):
     ]
     res = subprocess.run(annotate_cmd, text=True, capture_output=True)
     if res.returncode != 0:
-        print(f"Annotation failed with exit code {res} for dataset {dataset}")
-        print(f"BUILD COMMAND: {annotate_cmd}")
+        print(
+            f"Annotation failed with exit code {res.returncode} for dataset {dataset}"
+        )
+        print(f"Annotate Command for dataset {dataset}: {" ".join(annotate_cmd)}")
+    if DEBUG:
+        print(f"Annotate Command for dataset {dataset}: {" ".join(annotate_cmd)}")
     return
 
 
@@ -212,7 +219,11 @@ def get_errors(dataset: str):
     with open(result_file, "r") as f:
         output = f.read()
 
-    return len(re.findall(r"error: \[NullAway\]", output))
+    error_count = len(re.findall(r"error: \[NullAway\]", output))
+    if DEBUG:
+        print(f"Errors found for dataset {dataset}: {error_count}")
+
+    return error_count
 
 
 def refactor(dataset: str):
@@ -221,6 +232,10 @@ def refactor(dataset: str):
     )
     if res != 0:
         print(f"Running VGRTool failed with exit code {res} for dataset {dataset}")
+        print(
+            f"BUILD COMMAND: ./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
+        )
+    if DEBUG:
         print(
             f"BUILD COMMAND: ./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
         )
@@ -316,13 +331,20 @@ def summarize(results):
     benchmark_results.to_csv(f"{OUTPUT_DIR}/summary.csv")
 
 
-if len(sys.argv) == 3 and sys.argv[1] == "run":
-    if isdigit(sys.argv[2]):
-        run(int(sys.argv[2]))
-    if not os.path.isdir(sys.argv[2]):
-        print(f"USAGE: {sys.argv[0]} RUN <DIR>")
-        sys.exit(1)
-    run_one(os.path.split(sys.argv[2])[-1])
-# elif len(sys.argv) == 2 and sys.argv[1] == "run":
-else:
+argparser = argparse.ArgumentParser(description="Runs benchmark.")
+argparser.add_argument(
+    "--debug", action="store_true", help="sum the integers (default: find the max)"
+)
+argparser.add_argument(
+    "--run", action="store_true", help="Benchmark full NJR-1 dataset"
+)
+argparser.add_argument("--run_dataset", type=str, help="Run only the dataset specified")
+args = argparser.parse_args()
+
+DEBUG = args.debug
+
+if args.run_dataset:
+    dataset_name = os.path.split(args.run_dataset)[-1]
+    run_one(dataset_name)
+elif args.run:
     run()
