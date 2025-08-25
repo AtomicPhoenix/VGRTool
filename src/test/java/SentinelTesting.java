@@ -158,4 +158,85 @@ public class SentinelTesting {
 				                        """;
 		test(input, expectedOutput);
 	}
+
+	@Test
+	public void shadowingCheck() {
+		String input = """
+				public class SentinelTest {
+				    int val = 0;
+				    public void test() {
+				        int val = 0;
+				        String str = "Hello World";
+				        if (str == null) {
+				            val = -1;
+				        }
+				        if (this.val == 0) {
+				            System.out.println("Str is not null");
+				        }
+				    }
+				                        """;
+		String expectedOutput = """
+				public class SentinelTest {
+				    int val = 0;
+				    public void test() {
+				        int val = 0;
+				        String str = "Hello World";
+				        if (str == null) {
+				            val = -1;
+				        }
+				        if (this.val == 0) {
+				            System.out.println("Str is not null");
+				        }
+				    }
+				                        """;
+		test(input, expectedOutput);
+	}
+
+	public void variableReassignmentTest() {
+		String input = """
+				public class SentinelTest {
+				    public void test() {
+				        String str = "Hello World";
+				        int val = 0;
+
+				        if (str == null) {
+				            val = -1;
+				        }
+
+				        if (val == 0) {
+				            System.out.println("Str is not null");
+				        }
+
+					val = 0;
+
+				        if (val == 0) {
+						;
+				        }
+				    }
+				}
+				        """;
+		String expectedOutput = """
+				public class SentinelTest {
+				    public void test() {
+				        String str = "Hello World";
+				        int val = 0;
+
+				        if (str == null) {
+				            val = -1;
+				        }
+
+				        if (str != null) {
+				            System.out.println("Str is not null");
+				        }
+
+					val = 0;
+
+				        if (val == 0) {
+						;
+				        }
+				    }
+				}
+				                        """;
+		test(input, expectedOutput);
+	}
 }
