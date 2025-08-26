@@ -9,6 +9,7 @@ bin
 benchmarking/datasets/
 benchmarking/results/
 benchmarking/sources/
+benchmarking/compiled_classes/
 
 # Ignore IDE specific files
 .vscode
