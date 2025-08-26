@@ -56,7 +56,8 @@ public class NestedNullRefactoring extends Refactoring {
 	 * that returns the result of a null check
 	 */
 	private boolean isApplicableImpl(MethodInvocation invocation) {
-		if (applicableMethods.get(invocation.resolveMethodBinding()) != null) {
+		if (invocation.resolveMethodBinding() != null
+				&& applicableMethods.get(invocation.resolveMethodBinding()) != null) {
 			System.out.println("[DEBUG] Invocation of applicable method found");
 			return true;
 		}
