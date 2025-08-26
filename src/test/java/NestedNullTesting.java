@@ -61,16 +61,17 @@ public class NestedNullTesting {
 	public void overloadTest() {
 		String input = """
 				public class NestedNullTest {
-					String str = "Hello World";
-					private boolean checkNullOverloaded() {
-					        return str != null;
-					}
+				    String str = "Hello World";
 
-					private boolean checkNullOverloaded(Object var) {
-					    return var != null;
-					}
+				    private boolean checkNullOverloaded() {
+				        return str != null;
+				    }
 
-					public void test() {
+				    private boolean checkNullOverloaded(Object var) {
+				        return var != null;
+				    }
+
+				    public void test() {
 
 				        if (checkNullOverloaded()) {
 				            ;
@@ -92,16 +93,17 @@ public class NestedNullTesting {
 				""";
 		String expectedOutput = """
 				public class NestedNullTest {
-					String str = "Hello World";
-					private boolean checkNullOverloaded() {
-					        return str != null;
-					}
+				    String str = "Hello World";
 
-					private boolean checkNullOverloaded(Object var) {
-					    return var != null;
-					}
+				    private boolean checkNullOverloaded() {
+				        return str != null;
+				    }
 
-					public void test() {
+				    private boolean checkNullOverloaded(Object var) {
+				        return var != null;
+				    }
+
+				    public void test() {
 
 				        if ((str != null)) {
 				            ;
