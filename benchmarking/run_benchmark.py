@@ -67,6 +67,7 @@ DEBUG = False
 
 def initialize():
     print("Initializing benchmarking folders and datasets")
+    shutil.rmtree(OUTPUT_DIR, ignore_errors=True)
     shutil.rmtree(DATASETS_REFACTORED_DIR, ignore_errors=True)
     os.makedirs(SRC_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
