@@ -61,17 +61,16 @@ public class NestedNullTesting {
 	public void overloadTest() {
 		String input = """
 				public class NestedNullTest {
-				    String str = "Hello World";
+					String str = "Hello World";
+					private boolean checkNullOverloaded() {
+					        return str != null;
+					}
 
-				    private boolean checkNullOverloaded() {
-				        return str != null;
-				    }
+					private boolean checkNullOverloaded(Object var) {
+					    return var != null;
+					}
 
-				    private boolean checkNullOverloaded(Object var) {
-				        return var != null;
-				    }
-
-				    public void test() {
+					public void test() {
 
 				        if (checkNullOverloaded()) {
 				            ;
@@ -92,36 +91,36 @@ public class NestedNullTesting {
 				}
 				""";
 		String expectedOutput = """
-								public class NestedNullTest {
-								    String str = "Hello World";
-				private boolean checkNullOverloaded() {
-								        return str != null;
-								    }
+				public class NestedNullTest {
+					String str = "Hello World";
+					private boolean checkNullOverloaded() {
+					        return str != null;
+					}
 
-								    private boolean checkNullOverloaded(Object var) {
-								        return var != null;
-								    }
+					private boolean checkNullOverloaded(Object var) {
+					    return var != null;
+					}
 
-								    public void test() {
+					public void test() {
 
-								        if ((str != null)) {
-								            ;
-								        }
+				        if ((str != null)) {
+				            ;
+				        }
 
-								        if (!(str != null)) {
-								            ;
-								        }
+				        if (!(str != null)) {
+				            ;
+				        }
 
-								        if (checkNullOverloaded(null)) {
-								            ;
-								        }
+				        if (checkNullOverloaded(null)) {
+				            ;
+				        }
 
-								        if (!checkNullOverloaded(null)) {
-								            ;
-								        }
-								    }
-								}
-								""";
+				        if (!checkNullOverloaded(null)) {
+				            ;
+				        }
+				    }
+				}
+				""";
 		test(input, expectedOutput);
 	}
 
