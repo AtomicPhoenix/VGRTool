@@ -118,8 +118,7 @@ public class VGRTool {
 			System.out.println("Refactored file saved: " + file.getPath());
 
 		} catch (IOException e) {
-			String logString = "Error processing file: " + file.getPath();
-			System.out.println(logString);
+			System.out.println("Error processing file: " + file.getPath());
 		}
 	}
 }
