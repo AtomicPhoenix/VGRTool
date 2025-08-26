@@ -1,4 +1,5 @@
 # pyright: basic
+from codecs import ignore_errors
 import os
 import re
 import shutil
@@ -66,11 +67,12 @@ DEBUG = False
 
 def initialize():
     print("Initializing benchmarking folders and datasets")
+    shutil.rmtree(DATASETS_REFACTORED_DIR, ignore_errors=True)
     os.makedirs(SRC_DIR, exist_ok=True)
-    os.makedirs(COMPILED_CLASSES_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(DATASETS_DIR, exist_ok=True)
     os.makedirs(DATASETS_CACHE_DIR, exist_ok=True)
+    os.makedirs(COMPILED_CLASSES_DIR, exist_ok=True)
 
     # Download datasets if they don't already exist
     if len(os.listdir(DATASETS_CACHE_DIR)) == 0:
@@ -94,6 +96,8 @@ def initialize():
                 f"Extracting downloaded datasets failed with exit code {res}. Exiting Program"
             )
             sys.exit(1)
+
+    os.system(f"cp -av {DATASETS_CACHE_DIR} {DATASETS_REFACTORED_DIR}")
 
     print("Benchmarking Stage Zero Completed\n")
 
@@ -206,31 +210,44 @@ def annotate(dataset: str):
         )
     if DEBUG:
         print(f"Annotate Command for dataset {dataset}: \n\t{" ".join(annotate_cmd)}\n")
+    with open(f"{OUTPUT_DIR}/{dataset}/annotator.txt", "w") as f:
+        f.write(f"CMD:\n\t{" ".join(annotate_cmd)}\n")
+        f.write(f"STDOUT:\n\t{res.stdout}\n")
+        f.write(f"STDERR:\n\t{res.stderr}\n")
     return
 
 
-def get_errors(dataset: str):
+def get_errors(dataset: str, new_run=False):
     build_cmd = " ".join(get_build_cmd(dataset))
-    result_file = f"{OUTPUT_DIR}/tmp.txt"
-    _ = os.system(f"{build_cmd} &> {result_file}")
+    log_file = f"{OUTPUT_DIR}/error_count_log.txt"
+    output_file = f"{OUTPUT_DIR}/{dataset}/error_count.txt"
+    _ = os.system(f"{build_cmd} &> {log_file}")
+
+    if new_run:
+        shutil.rmtree(log_file, ignore_errors=True)
+        shutil.rmtree(output_file, ignore_errors=True)
 
     # Read the file and count occurrences of NullAway errors
-    with open(result_file, "r") as f:
-        output = f.read()
+    with open(log_file, "r") as f:
+        error_count = len(re.findall(r"error: \[NullAway\]", f.read()))
 
-    error_count = len(re.findall(r"error: \[NullAway\]", output))
+    with open(output_file, "a") as f:
+        f.write(f"Error Count: {error_count}\n")
+
     if DEBUG:
         print(f"Errors found for dataset {dataset}: {error_count}")
-
     return error_count
 
 
 def refactor(dataset: str):
+    output_file = f"{OUTPUT_DIR}/{dataset}/error_count.txt"
     res = os.system(
-        f"./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
+        f"./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> {output_file}"
     )
+
     if res != 0:
         print(f"Running VGRTool failed with exit code {res} for dataset {dataset}")
+
     if DEBUG:
         print(
             f"Build Command for dataset {dataset}: ./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> /dev/null"
@@ -243,20 +260,21 @@ def run(limit=None):
     Runs the full benchmarking routine (Annotate -> Count Errors -> Refactor -> Count Errors) for every dataset in the NJR-1 dataset collection and then summarizes the results.
     """
     results = []
-
     datasets_list = os.listdir(DATASETS_REFACTORED_DIR)
 
     if limit is not None:
         datasets_list = datasets_list[:limit]
 
+    initialize()
     for dataset in datasets_list:
+        os.makedirs(f"{OUTPUT_DIR}/{dataset}", exist_ok=True)
         print(f"Annotating {dataset}...")
         annotate(dataset)
-        old_err_count = get_errors(dataset)
+        old_err_count = get_errors(dataset, True)
         print(f"Refactoring {dataset}...")
         refactor(dataset)
         new_err_count = get_errors(dataset)
-        print(f"Finished benchmarking {dataset}")
+        print(f"Finished benchmarking {dataset}\n")
         results.append(
             {
                 "benchmark": dataset,
@@ -269,7 +287,17 @@ def run(limit=None):
     return
 
 
-def run_one(dataset):
+def run_dataset(dataset):
+    cache_folder = f"{DATASETS_CACHE_DIR}/{dataset}"
+    refactor_folder = f"{DATASETS_REFACTORED_DIR}/{dataset}"
+    if not os.path.isdir(cache_folder):
+        print(
+            f"Error: Dataset path {cache_folder} does not exist. Run --initialize to initialize NJR-1 dataset cache."
+        )
+        sys.exit()
+
+    shutil.rmtree(refactor_folder)
+    os.system(f"rsync -av {cache_folder} {refactor_folder}")
     results = []
 
     print(f"Annotating {dataset}...")
@@ -329,18 +357,39 @@ def summarize(results):
 
 argparser = argparse.ArgumentParser(description="Runs benchmark.")
 argparser.add_argument(
-    "--debug", action="store_true", help="sum the integers (default: find the max)"
+    "--debug", action="store_true", help=f"Enabling debugging statements."
 )
 argparser.add_argument(
-    "--run", action="store_true", help="Benchmark full NJR-1 dataset"
+    "--initialize", action="store_true", help=f"Initialize NJR-1 dataset cache."
 )
-argparser.add_argument("--run_dataset", type=str, help="Run only the dataset specified")
+
+
+def valid_dataset_count(n):
+    n = int(n)
+    if n <= 0 or n > 296:
+        raise argparse.ArgumentTypeError(
+            "Must be a positive integer less than or equal to 296."
+        )
+    return n
+
+
+argparser.add_argument(
+    "--run",
+    type=valid_dataset_count,
+    help="Benchmark N datasets from the NJR-1 Dataset. N must be between 1 and 296 inclusive.",
+)
+argparser.add_argument(
+    "--run_dataset", type=str, help="Run only the dataset specified."
+)
 args = argparser.parse_args()
 
 DEBUG = args.debug
 
 if args.run_dataset:
     dataset_name = os.path.split(args.run_dataset)[-1]
-    run_one(dataset_name)
+    run_dataset(dataset_name)
+
 elif args.run:
+    run(args.run)
+else:
     run()
