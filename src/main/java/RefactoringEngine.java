@@ -29,10 +29,8 @@ public class RefactoringEngine {
 				case SentinelRefactoring.NAME -> refactorings.add(new SentinelRefactoring());
 				case NestedNullRefactoring.NAME -> refactorings.add(new NestedNullRefactoring());
 				case BooleanFlagRefactoring.NAME -> refactorings.add(new BooleanFlagRefactoring());
-				case "All" ->
-					refactorings.addAll(List.of(new AddNullCheckBeforeDereferenceRefactoring(),
-							new SentinelRefactoring(), new NestedNullRefactoring(),
-							new BooleanFlagRefactoring()));
+				case "All" -> refactorings.addAll(List.of(new AddNullCheckBeforeDereferenceRefactoring(),
+						new SentinelRefactoring(), new NestedNullRefactoring(), new BooleanFlagRefactoring()));
 				default -> System.err.println("Unknown refactoring: " + name);
 			}
 
@@ -47,10 +45,9 @@ public class RefactoringEngine {
 	 * Applies all refactorings in {@value refactorings} to a given source file
 	 * 
 	 * @param cu
-	 *                   The compilation unit to use
+	 *            The compilation unit to use
 	 * @param sourceCode
-	 *                   A string representing the filepath of the source code to
-	 *                   refactor
+	 *            A string representing the filepath of the source code to refactor
 	 */
 	public String applyRefactorings(CompilationUnit cu, String sourceCode) {
 		AST ast = cu.getAST();
@@ -65,8 +62,7 @@ public class RefactoringEngine {
 
 					try {
 						if (refactoring.isApplicable(node)) {
-							System.out.println("[DEBUG] [" + refactoring
-									+ "] Applying refactoring to: \n" + node);
+							System.out.println("[DEBUG] [" + refactoring + "] Applying refactoring to: \n" + node);
 							refactoring.apply(node, rewriter);
 						}
 					} catch (Exception e) {

@@ -118,8 +118,7 @@ public class NestedNullRefactoring extends Refactoring {
 
 			if ((isValidOperand(leftOperand) && rightOperand instanceof NullLiteral)
 					|| (isValidOperand(rightOperand) && leftOperand instanceof NullLiteral)) {
-				System.out.println(
-						"[DEBUG] Found one line null check method: " + declaration.getName());
+				System.out.println("[DEBUG] Found one line null check method: " + declaration.getName());
 				applicableMethods.put((declaration.resolveBinding()), retExpr);
 			}
 		}
@@ -131,8 +130,7 @@ public class NestedNullRefactoring extends Refactoring {
 	 * null equality check, i.e. it represents a valid variable or constant.
 	 */
 	private boolean isValidOperand(Expression operand) {
-		return (operand instanceof SimpleName || operand instanceof FieldAccess
-				|| operand instanceof QualifiedName);
+		return (operand instanceof SimpleName || operand instanceof FieldAccess || operand instanceof QualifiedName);
 	}
 
 	@Override
@@ -140,8 +138,7 @@ public class NestedNullRefactoring extends Refactoring {
 		// Check if Method Invocation is in applicableMethods
 		if (node instanceof MethodInvocation invocation) {
 			replace(node, rewriter, invocation);
-		} else if (node instanceof PrefixExpression prefix
-				&& prefix.getOperator() == PrefixExpression.Operator.NOT
+		} else if (node instanceof PrefixExpression prefix && prefix.getOperator() == PrefixExpression.Operator.NOT
 				&& prefix.getOperand() instanceof MethodInvocation invocation) {
 			replace(node, rewriter, invocation);
 		}
