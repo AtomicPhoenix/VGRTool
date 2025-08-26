@@ -260,13 +260,14 @@ def run(limit=None):
     """
     Runs the full benchmarking routine (Annotate -> Count Errors -> Refactor -> Count Errors) for every dataset in the NJR-1 dataset collection and then summarizes the results.
     """
+    initialize()
+
     results = []
     datasets_list = os.listdir(DATASETS_REFACTORED_DIR)
 
     if limit is not None:
         datasets_list = datasets_list[:limit]
 
-    initialize()
     for dataset in datasets_list:
         os.makedirs(f"{OUTPUT_DIR}/{dataset}", exist_ok=True)
         print(f"Annotating {dataset}...")
@@ -356,15 +357,6 @@ def summarize(results):
     benchmark_results.to_csv(f"{OUTPUT_DIR}/summary.csv")
 
 
-argparser = argparse.ArgumentParser(description="Runs benchmark.")
-argparser.add_argument(
-    "--debug", action="store_true", help=f"Enabling debugging statements."
-)
-argparser.add_argument(
-    "--initialize", action="store_true", help=f"Initialize NJR-1 dataset cache."
-)
-
-
 def valid_dataset_count(n):
     n = int(n)
     if n <= 0 or n > 296:
@@ -374,6 +366,13 @@ def valid_dataset_count(n):
     return n
 
 
+argparser = argparse.ArgumentParser(description="Runs benchmark.")
+argparser.add_argument(
+    "--debug", action="store_true", help=f"Enabling debugging statements."
+)
+argparser.add_argument(
+    "--initialize", action="store_true", help=f"Initialize NJR-1 dataset cache."
+)
 argparser.add_argument(
     "--run",
     type=valid_dataset_count,
@@ -389,7 +388,6 @@ DEBUG = args.debug
 if args.run_dataset:
     dataset_name = os.path.split(args.run_dataset)[-1]
     run_dataset(dataset_name)
-
 elif args.run:
     run(args.run)
 else:
