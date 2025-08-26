@@ -219,7 +219,7 @@ def annotate(dataset: str):
 
 def get_errors(dataset: str, new_run=False):
     build_cmd = " ".join(get_build_cmd(dataset))
-    log_file = f"{OUTPUT_DIR}/error_count_log.txt"
+    log_file = f"{OUTPUT_DIR}/{dataset}/error_count_log.txt"
     output_file = f"{OUTPUT_DIR}/{dataset}/error_count.txt"
     _ = os.system(f"{build_cmd} &> {log_file}")
 
@@ -240,7 +240,7 @@ def get_errors(dataset: str, new_run=False):
 
 
 def refactor(dataset: str):
-    output_file = f"{OUTPUT_DIR}/{dataset}/error_count.txt"
+    output_file = f"{OUTPUT_DIR}/{dataset}/refactoring.txt"
     res = os.system(
         f"./gradlew run --args='{DATASETS_REFACTORED_DIR}/{dataset} All' &> {output_file}"
     )
