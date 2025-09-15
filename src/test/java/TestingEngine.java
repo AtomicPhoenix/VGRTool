@@ -1,3 +1,4 @@
+package com;
 import java.util.Collections;
 import org.checkerframework.com.google.common.collect.Lists;
 import org.eclipse.jdt.core.JavaCore;

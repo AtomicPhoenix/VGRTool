@@ -1,3 +1,4 @@
+package com;
 public class NestedNullTest {
     public boolean checkNull(String str) {
         return str != null;
