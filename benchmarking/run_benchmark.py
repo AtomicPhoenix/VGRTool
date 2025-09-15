@@ -259,13 +259,13 @@ def run(limit=None):
     """
     Runs the full benchmarking routine (Annotate -> Count Errors -> Refactor -> Count Errors) for every dataset in the NJR-1 dataset collection and then summarizes the results.
     """
+    initialize()
     results = []
     datasets_list = os.listdir(DATASETS_REFACTORED_DIR)
 
     if limit is not None:
         datasets_list = datasets_list[:limit]
 
-    initialize()
     for dataset in datasets_list:
         os.makedirs(f"{OUTPUT_DIR}/{dataset}", exist_ok=True)
         print(f"Annotating {dataset}...")
