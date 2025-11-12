@@ -21,7 +21,3 @@ benchmarking/compiled_classes/
 # Ignore Shell Extensions
 .direnv/
 .envrc
-
-# Ignore benchmarking outputs / downloads
-benchmarking/datasets
-benchmarking/results
