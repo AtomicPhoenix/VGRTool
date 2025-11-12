@@ -22,3 +22,6 @@ benchmarking/compiled_classes/
 .direnv/
 .envrc
 
+# Ignore benchmarking outputs / downloads
+benchmarking/datasets
+benchmarking/results
