@@ -46,7 +46,17 @@ public class SentinelRefactoring extends Refactoring {
 	 * the key, ensuring global uniqueness. Two variables who have the same name but
 	 * have different scopes will have different IBinding instances.
 	 */
-	private final Map<IBinding, Sentinel> sentinelCandidates;
+	private final Map<IBinding, SentinelCandidate> sentinelCandidates;
+
+	/**
+	 * Map of all variables which are confirmed valid sentinels.
+	 * <p>
+	 * Uses each variable's ({@link org.eclipse.jdt.core.dom.IVariableBinding}) as
+	 * the key, ensuring global uniqueness. Two variables who have the same name but
+	 * have different scopes will have different IBinding instances.
+	 */
+	private final Map<IBinding, ConfirmedSentinel> confirmedSentinels;
+
 	/**
 	 * Set of all sentinel assignments which have already been parsed; Used to
 	 * prevent repeated parsing of same sentinel assignment.
@@ -54,48 +64,60 @@ public class SentinelRefactoring extends Refactoring {
 	private final Set<Assignment> sentinelAssignments;
 
 	/**
-	 * Helper class for storing the AST element of a sentinel reference and it's
-	 * associated AST elements.
+	 * Helper class for storing the AST element of a potential sentinel reference
 	 */
-	private class Sentinel {
+	private class SentinelCandidate {
+		public final IBinding binding;
+		public @Nullable Object lastValue;
+
+		public SentinelCandidate(IBinding binding, @Nullable Object lastValue) {
+			this.binding = binding;
+			this.lastValue = lastValue;
+		}
+	}
+
+	/**
+	 * Helper class for storing the AST element of a confirmed sentinel reference
+	 * and it's associated AST elements.
+	 */
+	private class ConfirmedSentinel {
+		public IBinding binding;
 		/**
 		 * The original assignment statement setting the sentinel's value. A null value
 		 * indicates the sentinel has not yet been assigned a value
 		 */
-		public @Nullable Assignment sentinel_assignment;
+		public Assignment sentinel_assignment;
 		/**
 		 * The conditional expression used to decide the value of the sentinel. A null
 		 * value indicates a variable which could become a sentinel, but has not yet had
 		 * a conditional assignemnt.
 		 */
-		public @Nullable InfixExpression null_check;
+		public InfixExpression null_check;
+
 		/**
 		 * The last value assigned to the sentinel; Used for validity tracking. A null
 		 * value represents an unknown previous value.
 		 */
-		public @Nullable Object lastValue;
+		public Object null_value;
 
-		public Sentinel(@Nullable Assignment sentinel_assignment, @Nullable InfixExpression null_check,
-				@Nullable Object lastValue) {
+		public ConfirmedSentinel(IBinding binding, Assignment sentinel_assignment, InfixExpression null_check,
+				Object null_value) {
+			this.binding = binding;
 			this.sentinel_assignment = sentinel_assignment;
 			this.null_check = null_check;
-			this.lastValue = lastValue;
-		}
-
-		public String toString() {
-			return "Sentinel:\n\tSentinel_Assignment: " + this.sentinel_assignment + "\n\tNull_Check: "
-					+ this.null_check;
+			this.null_value = null_value;
 		}
 	}
 
 	public SentinelRefactoring() {
 		super();
 		this.sentinelCandidates = new HashMap<>();
+		this.confirmedSentinels = new HashMap<>();
 		this.sentinelAssignments = new HashSet<>();
 	}
 
 	/*
-	 * Detects reassignments of existing sentinels If reassignment is detected,
+	 * Detects reassignments of existing sentinels. If reassignment is detected,
 	 * removes the sentinel from the list of valid sentinels.
 	 */
 	private void detectReassignment(Assignment assignmentNode) {
@@ -108,9 +130,14 @@ public class SentinelRefactoring extends Refactoring {
 		if (!(lhs instanceof SimpleName varName)) {
 			return;
 		}
-		if (sentinelCandidates.get(varName.resolveBinding()) != null) {
-			sentinelCandidates.remove(varName.resolveBinding());
+
+		IBinding binding = varName.resolveBinding();
+		if (binding == null) {
+			return;
 		}
+
+		sentinelCandidates.remove(binding);
+		confirmedSentinels.remove(binding);
 	}
 
 	/*
@@ -125,10 +152,14 @@ public class SentinelRefactoring extends Refactoring {
 		List<VariableDeclarationFragment> fragments = declaration.fragments();
 		for (VariableDeclarationFragment fragment : fragments) {
 			SimpleName varName = fragment.getName();
-			if (sentinelCandidates.get(varName.resolveBinding()) != null) {
-				sentinelCandidates.remove(varName.resolveBinding());
+
+			IBinding binding = varName.resolveBinding();
+			if (binding == null) {
+				continue;
 			}
 
+			sentinelCandidates.remove(binding);
+			confirmedSentinels.remove(binding);
 		}
 	}
 
@@ -136,47 +167,31 @@ public class SentinelRefactoring extends Refactoring {
 	 * Determines whether a possible sentinel value is valid (i.e. safely
 	 * refactorable) by analyzing its associated components.
 	 * 
-	 * @param sentinel_assignment
-	 *            The original assignment statement setting the sentinel's value
-	 * @param null_check
-	 *            The conditional expression used to decide the value of the
-	 *            sentinel
+	 * @param candidate
+	 *            The sentinel candidate being verified
+	 * 
 	 * @param newValue
 	 *            The value assigned to the sentinel when the null_check condition
 	 *            is true
 	 */
-	private boolean isValidSentinel(Assignment sentinel_assignment, Expression null_check, Object newValue) {
+	private boolean isValidSentinel(SentinelCandidate candidate, Object newValue) {
 
-		LOGGER.debug("Parsing Sentinel: %s, %s, %s", sentinel_assignment, null_check, newValue);
-
-		if (!(sentinel_assignment.getLeftHandSide() instanceof SimpleName sentinelName)) {
-			LOGGER.debug("Failed to retrieve variable name from sentinel_assignment.");
-			return false;
-		}
-
-		// Check if the variable is in map of sentinel candidates.
-		Sentinel sentinel_value = sentinelCandidates.get(sentinelName.resolveBinding());
-		if (sentinel_value == null) {
-			LOGGER.debug("Sentinel '%s' is not a sentinel candidate.", sentinelName);
-			return false;
-		}
+		LOGGER.debug("Validating Sentinel Candidate: %s", candidate);
 
 		// Ensure we are setting the sentinel to a new, distinct value so that we know
 		// whether the null_check condition returned true or not.
-		Object lastValue = sentinel_value.lastValue;
-		if (lastValue == null) {
-			LOGGER.debug("Last value of Sentinel '%s' is unknown.", sentinelName);
+		if (candidate.lastValue == null) {
+			LOGGER.debug("Last value of sentinel candidate, %s, is unknown", candidate);
 			return false;
 		}
-		if (lastValue.equals(newValue)) {
-			LOGGER.debug("New value of Sentinel '%s' matches old value.\n\tOld Value: %s\n\tNew Value: %s",
-					sentinelName, lastValue, newValue);
+		if (java.util.Objects.equals(candidate.lastValue, newValue)) {
+			LOGGER.debug("New value of Sentinel '%s' matches old value.\n\tOld Value: %s\n\tNew Value: %s", candidate,
+					candidate.lastValue, newValue);
 			return false;
 		}
 
-		LOGGER.debug("Sentinel \"" + sentinelName + "\" is valid.");
+		LOGGER.debug("Sentinel %s is valid.", candidate);
 		return true;
-
 	}
 
 	private void updateSentinel(ASTNode node) {
@@ -187,51 +202,57 @@ public class SentinelRefactoring extends Refactoring {
 		} else if (node instanceof MethodInvocation || node instanceof SuperMethodInvocation) {
 			LOGGER.debug("Clearing all sentinel values due to method invocation...");
 
-			for (Map.Entry<IBinding, Sentinel> entry : sentinelCandidates.entrySet()) {
-				IBinding key = entry.getKey();
-				Sentinel sentinel = sentinelCandidates.get(key);
-				if (sentinel != null) {
-					sentinel.lastValue = null;
-				}
+			for (SentinelCandidate candidate : sentinelCandidates.values()) {
+				candidate.lastValue = null;
 			}
 		}
 	}
 
 	private void updateSentinel(VariableDeclaration declaration) {
-		IBinding key = declaration.getName().resolveBinding();
-		Object newValue = declaration.getInitializer().resolveConstantExpressionValue();
-		updateSentinel(key, newValue);
+		IBinding binding = declaration.getName().resolveBinding();
+		if (binding == null) {
+			return;
+		}
+
+		Expression initializer = declaration.getInitializer();
+		if (initializer == null) {
+			return;
+		}
+
+		Object newValue = initializer.resolveConstantExpressionValue();
+		updateSentinel(binding, newValue);
 	}
 
 	private void updateSentinel(Assignment statement) {
 		if (!(statement.getLeftHandSide() instanceof SimpleName varName)) {
 			return;
 		}
-		IBinding key = varName.resolveBinding();
+		IBinding binding = varName.resolveBinding();
+		if (binding == null) {
+			return;
+		}
 		Object newValue = statement.getRightHandSide().resolveConstantExpressionValue();
-		updateSentinel(key, newValue);
+		updateSentinel(binding, newValue);
 	}
 
 	private void updateSentinel(IBinding key, Object newValue) {
-		Sentinel sentinel = sentinelCandidates.get(key);
-		if (sentinel == null) {
-			sentinelCandidates.put(key, new Sentinel(null, null, newValue));
-			return;
+		SentinelCandidate candidate = sentinelCandidates.get(key);
+		if (candidate == null) {
+			sentinelCandidates.put(key, new SentinelCandidate(key, newValue));
+		} else {
+			candidate.lastValue = newValue;
 		}
-		sentinel.lastValue = newValue;
 	}
 
 	@Override
 	public boolean isApplicable(ASTNode node) {
 		updateSentinel(node);
-		if (node instanceof IfStatement ifStmt && isApplicable(ifStmt)) {
-			return true;
-		}
-
 		if (node instanceof Assignment assign) {
 			detectReassignment(assign);
 		} else if (node instanceof VariableDeclarationStatement declaration) {
 			detectShadowing(declaration);
+		} else if (node instanceof IfStatement ifStmt) {
+			return isApplicable(ifStmt);
 		}
 		return false;
 	}
@@ -249,7 +270,9 @@ public class SentinelRefactoring extends Refactoring {
 		List<Expression> exprs = Refactoring.getSubExpressions(ifStmt.getExpression());
 		for (Expression expression : exprs) {
 			if (expression instanceof InfixExpression infix) {
-				return isApplicable(infix);
+				if (isApplicable(infix)) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -291,8 +314,13 @@ public class SentinelRefactoring extends Refactoring {
 		if (!(expr instanceof SimpleName sentinel_name)) {
 			return false;
 		}
-		Sentinel sentinelCandidate = sentinelCandidates.get(sentinel_name.resolveBinding());
-		return (sentinelCandidate != null) && sentinelCandidate.sentinel_assignment != null;
+
+		IBinding sentinel_binding = sentinel_name.resolveBinding();
+		if (sentinel_binding == null) {
+			return false;
+		}
+
+		return confirmedSentinels.containsKey(sentinel_binding);
 	}
 
 	/**
@@ -333,21 +361,31 @@ public class SentinelRefactoring extends Refactoring {
 		if (!(sentinel_assignment.getLeftHandSide() instanceof SimpleName var_name)) {
 			return;
 		}
+
 		if (sentinel_assignment.getOperator() != Assignment.Operator.ASSIGN) {
+			return;
+		}
+
+		IBinding binding = var_name.resolveBinding();
+		if (binding == null) {
+			return;
+		}
+
+		SentinelCandidate candidate = sentinelCandidates.get(binding);
+		if (candidate == null) {
 			return;
 		}
 
 		Object sentinel_val = sentinel_assignment.getRightHandSide().resolveConstantExpressionValue();
 
-		if (isValidSentinel(sentinel_assignment, null_check, sentinel_val)) {
-			Sentinel new_sentinel = new Sentinel(sentinel_assignment, null_check, sentinel_val);
-			LOGGER.debug("Parsed Sentinel: %s", new_sentinel);
-			sentinelCandidates.put(var_name.resolveBinding(), new_sentinel);
+		if (isValidSentinel(candidate, sentinel_val)) {
+			ConfirmedSentinel sentinel = new ConfirmedSentinel(binding, sentinel_assignment, null_check, sentinel_val);
 			sentinelAssignments.add(sentinel_assignment);
+			confirmedSentinels.put(binding, sentinel);
+			LOGGER.debug("Parsed Sentinel: %s", sentinel);
 		} else {
 			LOGGER.debug("New Sentinel is invalid.");
 		}
-
 	}
 
 	@Override
@@ -382,29 +420,25 @@ public class SentinelRefactoring extends Refactoring {
 			} else {
 				continue;
 			}
-			Sentinel sentinel = sentinelCandidates.get(cond_var.resolveBinding());
+
+			IBinding binding = cond_var.resolveBinding();
+			if (binding == null) {
+				continue;
+			}
+
+			ConfirmedSentinel sentinel = confirmedSentinels.get(binding);
 			if (sentinel == null) {
 				continue;
 			}
-			Assignment sentinel_assignment = sentinel.sentinel_assignment;
-			if (sentinel_assignment == null) {
-				continue;
-			}
-			Expression sent_val = sentinel_assignment.getRightHandSide();
 
-			InfixExpression null_check = sentinel.null_check;
-			if (null_check == null) {
-				continue;
-			}
-			InfixExpression.Operator null_check_op = null_check.getOperator();
+			InfixExpression.Operator null_check_op = sentinel.null_check.getOperator();
+			boolean originalValueMatch = java.util.Objects.equals(sentinel.null_value,
+					cond_val.resolveConstantExpressionValue());
 
 			AST ast = node.getAST();
-			InfixExpression replacement = (InfixExpression) ASTNode.copySubtree(ast, null_check);
-			boolean originalValueMatch = sent_val.resolveConstantExpressionValue()
-					.equals(cond_val.resolveConstantExpressionValue());
+			InfixExpression replacement = (InfixExpression) ASTNode.copySubtree(ast, sentinel.null_check);
 			replacement.setOperator(getRefactoredOperator(null_check_op, cond_op, originalValueMatch));
 			rewriter.replace(expression, replacement, null);
-
 		}
 	}
 
