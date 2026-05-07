@@ -184,7 +184,7 @@ public class SentinelRefactoring extends Refactoring {
 			updateSentinel(declaration);
 		} else if (node instanceof Assignment assign) {
 			updateSentinel(assign);
-		} else if (node instanceof MethodInvocation || node instanceof SuperMethodInvocation) {
+		} else if ((node instanceof MethodInvocation || node instanceof SuperMethodInvocation) && !VGRTool.unsound) {
 			LOGGER.debug("Clearing all sentinel values due to method invocation...");
 
 			for (Map.Entry<IBinding, Sentinel> entry : sentinelCandidates.entrySet()) {
