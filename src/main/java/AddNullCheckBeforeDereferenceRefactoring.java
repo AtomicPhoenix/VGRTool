@@ -10,10 +10,12 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.apache.logging.log4j.LogManager;
@@ -71,6 +73,11 @@ public class AddNullCheckBeforeDereferenceRefactoring extends Refactoring {
 
 		if (node instanceof Assignment assignment) {
 			verifyRefactors(assignment);
+		}
+
+		if ((node instanceof MethodInvocation || node instanceof SuperMethodInvocation) && !VGRTool.unsound) {
+			LOGGER.debug("Clearing all stored refactors due to method invocation...");
+			validRefactors.clear();
 		}
 
 		LOGGER.debug("Node " + node.getClass().getSimpleName() + " is NOT applicable. Skipping.");

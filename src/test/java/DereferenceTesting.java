@@ -16,7 +16,7 @@ public class DereferenceTesting {
 		String input = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? independentObj.getDependent() : null);
+						Class<?> dependentObj = (independentObj != null ? defaultValue : null);
 						if (dependentObj != null) {
 							;
 						}
@@ -26,7 +26,7 @@ public class DereferenceTesting {
 		String expectedOutput = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? independentObj.getDependent() : null);
+						Class<?> dependentObj = (independentObj != null ? defaultValue : null);
 						if ((independentObj != null)) {
 							;
 						}
@@ -41,7 +41,7 @@ public class DereferenceTesting {
 		String input = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj == null ? factory.getDependent() : null);
+						Class<?> dependentObj = (independentObj == null ? defaultValue : null);
 						if (dependentObj != null) {
 							;
 						}
@@ -51,7 +51,7 @@ public class DereferenceTesting {
 		String expectedOutput = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj == null ? factory.getDependent() : null);
+						Class<?> dependentObj = (independentObj == null ? defaultValue : null);
 						if ((independentObj == null)) {
 							;
 						}
@@ -66,7 +66,7 @@ public class DereferenceTesting {
 		String input = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? independentObj.getDependent() : null);
+						Class<?> dependentObj = (independentObj != null ? defaultValue : null);
 						if (!(dependentObj != null)) {
 							;
 						}
@@ -76,7 +76,7 @@ public class DereferenceTesting {
 		String expectedOutput = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? independentObj.getDependent() : null);
+						Class<?> dependentObj = (independentObj != null ? defaultValue : null);
 						if (!((independentObj != null))) {
 							;
 						}
@@ -91,7 +91,7 @@ public class DereferenceTesting {
 		String input = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = ((independentObj != null && 5 > 3) ? independentObj.getDependent() : null);
+						Class<?> dependentObj = ((independentObj != null && 5 > 3) ? defaultValue : null);
 						if (dependentObj != null) {
 							;
 						}
@@ -101,7 +101,7 @@ public class DereferenceTesting {
 		String expectedOutput = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = ((independentObj != null && 5 > 3) ? independentObj.getDependent() : null);
+						Class<?> dependentObj = ((independentObj != null && 5 > 3) ? defaultValue : null);
 						if (((independentObj != null && 5 > 3))) {
 							;
 						}
@@ -116,7 +116,7 @@ public class DereferenceTesting {
 		String input = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? null : factory.getDependent());
+						Class<?> dependentObj = (independentObj != null ? null : defaultValue);
 						if (dependentObj != null) {
 							;
 						}
@@ -126,7 +126,7 @@ public class DereferenceTesting {
 		String expectedOutput = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? null : factory.getDependent());
+						Class<?> dependentObj = (independentObj != null ? null : defaultValue);
 						if ((!(independentObj != null))) {
 							;
 						}
@@ -141,7 +141,7 @@ public class DereferenceTesting {
 		String input = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? independentObj.getDependent() : null);
+						Class<?> dependentObj = (independentObj != null ? defaultValue : null);
 						dependentObj = null;
 						if (dependentObj != null) {
 							;
@@ -152,7 +152,7 @@ public class DereferenceTesting {
 		String expectedOutput = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? independentObj.getDependent() : null);
+						Class<?> dependentObj = (independentObj != null ? defaultValue : null);
 						dependentObj = null;
 						if (dependentObj != null) {
 							;
@@ -168,7 +168,7 @@ public class DereferenceTesting {
 		String input = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? independentObj.getDependent() : null);
+						Class<?> dependentObj = (independentObj != null ? defaultValue : null);
 						dependentObj = someMethod();
 						if (dependentObj != null) {
 							;
@@ -179,7 +179,7 @@ public class DereferenceTesting {
 		String expectedOutput = """
 				public class Test {
 					private void test() {
-						Class<?> dependentObj = (independentObj != null ? independentObj.getDependent() : null);
+						Class<?> dependentObj = (independentObj != null ? defaultValue : null);
 						dependentObj = someMethod();
 						if (dependentObj != null) {
 							;
