@@ -58,6 +58,9 @@ public class VGRTool implements Runnable {
 	@Option(names = "--search", description = "Only search for valid refactorings without actually refactoring")
 	private static boolean searchOnly = false;
 
+	@Option(names = "--unsound", description = "Allow potentially unsound refactorings")
+	public static boolean unsound = false;
+
 	// Parses command-line arguments and executes run()
 	public static void main(String[] args) {
 		int exitCode = new CommandLine(new VGRTool()).execute(args);
