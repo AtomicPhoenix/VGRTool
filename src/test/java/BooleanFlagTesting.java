@@ -209,7 +209,7 @@ public class BooleanFlagTesting {
 				    List<String> items = Arrays.asList("Hello World");
 
 				    public void test() {
-				        boolean hasItems = (items != null && !items.isEmpty());
+				        boolean hasItems = items != null;
 
 				        // Indirectly implies items != null
 				        if (hasItems) {
@@ -223,10 +223,10 @@ public class BooleanFlagTesting {
 				    List<String> items = Arrays.asList("Hello World");
 
 				    public void test() {
-				        boolean hasItems = (items != null && !items.isEmpty());
+				        boolean hasItems = items != null;
 
 				        // Indirectly implies items != null
-				        if (((items != null && !items.isEmpty()))) {
+				        if ((items != null)) {
 				            TreeSet<?> set = new TreeSet<>(items);
 				        }
 				    }

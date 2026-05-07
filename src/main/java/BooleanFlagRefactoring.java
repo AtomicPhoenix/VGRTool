@@ -1,6 +1,8 @@
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.eclipse.jdt.core.dom.AST;
@@ -11,10 +13,12 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
@@ -26,6 +30,7 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
  */
 public class BooleanFlagRefactoring extends Refactoring {
 	public static final String NAME = "BooleanFlagRefactoring";
+	private static final Logger LOGGER = LogManager.getLogger();
 
 	/**
 	 * List of variable names identified as boolean flags, along with their
@@ -47,6 +52,10 @@ public class BooleanFlagRefactoring extends Refactoring {
 			return isApplicable(ifStmt);
 		} else if (node instanceof Assignment assignment) {
 			checkReassignment(assignment);
+		}
+		if ((node instanceof MethodInvocation || node instanceof SuperMethodInvocation) && !VGRTool.unsound) {
+			LOGGER.debug("Clearing all stored boolean flags due to method invocation...");
+			flagExpressions.clear();
 		}
 		return false;
 	}
